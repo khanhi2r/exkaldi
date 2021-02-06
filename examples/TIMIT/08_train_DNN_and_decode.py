@@ -335,7 +335,7 @@ def output_probability():
 
   # ------------- Parse arguments from command line ----------------------
   # 1. Add a discription of this program
-  args.discribe("This program is used to output DNN probability for realigning") 
+  args.describe("This program is used to output DNN probability for realigning") 
   # 2. Add options
   args.add("--expDir", abbr="-e", dtype=str, default="exp", discription="The data and output path of current experiment.")
   args.add("--dropout", abbr="-d", dtype=float, default=0.2, discription="Dropout.")
@@ -403,7 +403,7 @@ def main():
 
   # ------------- Parse arguments from command line ----------------------
   # 1. Add a discription of this program
-  args.discribe("This program is used to train triphone DNN acoustic model with Tensorflow") 
+  args.describe("This program is used to train triphone DNN acoustic model with Tensorflow") 
   # 2. Add options
   args.add("--expDir", abbr="-e", dtype=str, default="exp", discription="The data and output path of current experiment.")
   args.add("--LDAsplice", dtype=int, default=3, discription="Splice how many frames to head and tail for LDA feature.")

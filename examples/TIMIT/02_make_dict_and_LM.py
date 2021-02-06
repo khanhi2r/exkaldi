@@ -33,7 +33,7 @@ def main():
     
     # ------------- Parse arguments from command line ----------------------
     # 1. Add a discription of this program
-    args.discribe("This program is used to make dictionaries and language model") 
+    args.describe("This program is used to make dictionaries and language model") 
     # 2. Add options
     args.add("--expDir", abbr="-e", dtype=str, default="exp", discription="The data resources and output path of current experiment.")
     args.add("--order", abbr="-o", dtype=int, default=6, minV=1, maxV=6, discription="The maximum order of N-grams language model.")

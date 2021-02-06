@@ -37,7 +37,7 @@ def main():
     
     # ------------- Parse arguments from command line ----------------------
     # 1. Add a discription of this program
-    args.discribe("This program is used to train monophone GMM-HMM model") 
+    args.describe("This program is used to train monophone GMM-HMM model") 
     # 2. Add options
     args.add("--expDir", abbr="-e", dtype=str, default="exp", discription="The data and output path of current experiment.")
     args.add("--delta", abbr="-d", dtype=int, default=2, discription="Add n-order to feature.")

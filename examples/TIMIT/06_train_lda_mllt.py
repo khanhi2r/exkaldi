@@ -36,7 +36,7 @@ def main():
 
     # ------------- Parse arguments from command line ----------------------
     # 1. Add a discription of this program
-    args.discribe("This program is used to train triphone GMM-HMM model") 
+    args.describe("This program is used to train triphone GMM-HMM model") 
     # 2. Add options
     args.add("--expDir", abbr="-e", dtype=str, default="exp", discription="The data and output path of current experiment.")
     args.add("--splice", abbr="-c", dtype=int, default=3, discription="How many left-right frames to splice.")

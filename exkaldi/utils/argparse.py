@@ -54,7 +54,7 @@ class ArgumentParser:
 		if self.__argv is None:
 			self.__argv = sys.argv.copy()
 
-	def discribe(self, message):
+	def describe(self, message):
 		'''
 		Add a discription of current program.
 
@@ -91,7 +91,7 @@ class ArgumentParser:
 			_choices_: a list/tuple of values.  
 			_minV_: set the minimum value if dtype is int or float. Enable when _choices_ is None.  
 			_maxV_: set the maximum value if dtype is int or float. Enable when _choices_ is None.  
-			_maxV_: a string to discribe this option.
+			_maxV_: a string to describe this option.
 		'''
 		self.__capture()
 

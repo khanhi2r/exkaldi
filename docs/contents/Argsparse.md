@@ -4,7 +4,7 @@ This is an instance of `exkaldi.utils.argparse.ArgumentParser` class.
 It works in a global scope of all programs where Exkaldi has been imported.
 
 -----------------------------------------------------
->## args.discribe
+>## args.describe
 (message)
 
 Add a discription of current program.
@@ -16,7 +16,7 @@ _message_: a string.
 ```python
 from exkaldi import args
 
-args.discribe("This program is used to train monophone GMM-HMM.")
+args.describe("This program is used to train monophone GMM-HMM.")
 ```
 -----------------------------------------------------
 >## args.add
@@ -32,7 +32,7 @@ _dtype_: the default value or a list/tuple of values.
 _choices_: a list/tuple of values.  
 _minV_: set the minimum value if dtype is int or float. Enable when _choices_ is None.  
 _maxV_: set the maximum value if dtype is int or float. Enable when _choices_ is None.  
-_maxV_: a string to discribe this option.  
+_maxV_: a string to describe this option.  
 
 **Examples:**  
 ```python

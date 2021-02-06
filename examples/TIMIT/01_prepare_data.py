@@ -82,7 +82,7 @@ def main():
 
     # ------------- Parse arguments from command line ----------------------
     # 1. Add a discription of this program
-    args.discribe("This program is used to prepare TIMIT data.") 
+    args.describe("This program is used to prepare TIMIT data.") 
     # 2. Add some options
     args.add("--timitRoot", dtype=str, abbr="-t", default="/Corpus/TIMIT", discription="The root path of timit dataset.")
     args.add("--expDir", dtype=str, abbr="-e", default="exp", discription="The output path to save generated data.")
