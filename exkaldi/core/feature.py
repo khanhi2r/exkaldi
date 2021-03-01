@@ -29,7 +29,7 @@ from exkaldi.utils.utils import FileHandleManager
 from exkaldi.utils import declare
 from exkaldi.core.archive import BytesFeat,BytesCMVN,ListTable,IndexTable
 from exkaldi.core.load import load_list_table,load_index_table
-from exkaldi.core.common import check_multiple_resources,run_kaldi_commands_parallel
+from exkaldi.core.common import check_multiple_resources,run_kaldi_commands_parallel,run_kaldi_commands
 
 def __compute_feature(target,kaldiTool,useSuffix=None,name="feat",outFile=None):
 	'''

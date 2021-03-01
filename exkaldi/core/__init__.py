@@ -41,6 +41,7 @@ from exkaldi.core.feature import use_cmvn_sliding
 from exkaldi.core.feature import decompress_feat
 from exkaldi.core.feature import add_delta
 from exkaldi.core.feature import splice_feature
+from exkaldi.core.feature import paste_feature
 
 from exkaldi.core.common import tuple_dataset
 from exkaldi.core.common import match_utterances
