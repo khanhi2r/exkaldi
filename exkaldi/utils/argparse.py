@@ -36,7 +36,7 @@ class ArgumentParser:
 		self.__abb2Name = {}
 		self.__name2Abb = {}
 		self.__argv = None 
-		self.__discription = "Arguments for ExKaldi program"
+		self.__description = "Arguments for ExKaldi program"
 
 	def get_options(self):
 		'''
@@ -56,21 +56,21 @@ class ArgumentParser:
 
 	def describe(self, message):
 		'''
-		Add a discription of current program.
+		Add a description of current program.
 
 		Args:
 			<message>: string.
 		'''
 		self.__capture()
-		declare.is_valid_string("discription message", message)
-		self.__discription = message
+		declare.is_valid_string("description message", message)
+		self.__description = message
 
 	@property
 	def spec(self):
 		'''
 		Define the pattern to record one option.
 		'''
-		spec = namedtuple("Argument", ["dtype", "default", "choices", "minV", "maxV", "discription", "value"])
+		spec = namedtuple("Argument", ["dtype", "default", "choices", "minV", "maxV", "description", "value"])
 		spec.__new__.__defaults__ = (None,)
 		return spec
 
@@ -79,7 +79,7 @@ class ArgumentParser:
 		assert "|" not in item, f"'|' is special char which is not be allowed to use in option definition."
 		#assert "," not in item, f"',' is special char which is not be allowed to use in option definition."
 
-	def add(self,name,dtype,abbr=None,default=None,choices=None,minV=None,maxV=None,discription=None):
+	def add(self,name,dtype,abbr=None,default=None,choices=None,minV=None,maxV=None,description=None):
 		'''
 		Add a new option.
 
@@ -161,12 +161,12 @@ class ArgumentParser:
 			if minV is not None and maxV is not None:
 				declare.less_equal(f"Minimum value of {name}", minV, f"maximum value", maxV)
 
-		# check discription
-		if discription is not None:
-			declare.is_valid_string(f"Discription of {name}", discription)
-			self.__detect_special_char(discription)
+		# check description
+		if description is not None:
+			declare.is_valid_string(f"Discription of {name}", description)
+			self.__detect_special_char(description)
 
-		self.__arguments[name] = self.spec(dtype,default,choices,minV,maxV,discription)
+		self.__arguments[name] = self.spec(dtype,default,choices,minV,maxV,description)
 		self.__name2Abb[name] = abbr
 		if abbr is not None:
 			self.__abb2Name[abbr] = name
@@ -306,7 +306,7 @@ class ArgumentParser:
 			make_dependent_dirs(fileName, pathIsFile=True)
 
 		contents = []
-		contents.append(self.__discription)
+		contents.append(self.__description)
 		for name, info in self.__arguments.items():
 			# option name
 			m = "\n"
@@ -332,10 +332,10 @@ class ArgumentParser:
 			else:
 				choices = info.choices
 			m += f"choices={choices}\n"
-			# boundary and discription
+			# boundary and description
 			m += f"minV={info.minV}\n"
 			m += f"maxV={info.maxV}\n"
-			m += f"discription={info.discription}"
+			m += f"description={info.description}"
 			contents.append(m)
 		
 		contents = "\n".join(contents) + "\n"
@@ -381,14 +381,14 @@ class ArgumentParser:
 
 			return value  
 
-		self.__discription = blocks[0].strip()
+		self.__description = blocks[0].strip()
 		for blockNo, block in enumerate(blocks[1:], start=1):
 			block = block.strip()
 			if len(block) == 0:
 				continue
 			block = block.split("\n")
 			# 1. match options
-			values = {"name":None,"abbr":None,"dtype":None,"default":None,"choices":None,"minV":None,"maxV":None,"discription":None,"value":None}
+			values = {"name":None,"abbr":None,"dtype":None,"default":None,"choices":None,"minV":None,"maxV":None,"description":None,"value":None}
 			for m in block:
 				m = m.strip()
 				assert "=" in m, f"Augument should has format: key = value, but got: {m}."
@@ -490,7 +490,7 @@ class ArgumentParser:
 					 		 choices=values["choices"], 
 							 minV=values["minV"], 
 							 maxV=values["maxV"], 
-							 discription=values["discription"]
+							 description=values["description"]
 							)
 			
 			# finally, modify the "value"

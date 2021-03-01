@@ -597,6 +597,58 @@ def splice_feature(feat,left,right=None,outFile=None):
 	# run 
 	return run_kaldi_commands_parallel(resources,cmdPattern,analyzeResult=True,generateArchive="feat",archiveNames=names)
 
+def paste_feature(feats):
+	'''
+	Paste feature in feature dimension.
+
+	Args:
+		<feats>: a list of feature objects.
+
+	Return:
+		a new feature object.
+	''' 
+	declare.kaldi_existed()
+	assert isinstance(feats,(list,tuple)) and len(feats) > 0
+	for fe in feats:
+		declare.is_feature("feats", fe)
+
+	allResp = []
+	pastedName = []
+	
+	with FileHandleManager() as fhm:
+
+		for ot in feats:
+
+			if isinstance(ot,BytesFeat):
+				temp = fhm.create("wb+",suffix=".ark")
+				ot.sort(by="utt").save(temp)
+				allResp.append( f"ark:{temp.name}" )
+
+			elif isinstance(ot,NumpyFeat):
+				temp = fhm.create("wb+",suffix=".ark")
+				ot.sort(by="utt").to_bytes().save(temp)
+				allResp.append( f"ark:{temp.name}" )
+
+			else:
+				temp = fhm.create("w+",suffix=".scp")
+				ot.sort(by="utt").save(temp)
+				allResp.append( f"scp:{temp.name}" )
+
+			pastedName.append( ot.name )	
+		
+		allResp = " ".join(allResp)
+		cmd = f"paste-feats {allResp} ark:-"
+		
+		out,err,cod = run_shell_command(cmd,stdin="PIPE",stdout="PIPE",stderr="PIPE")
+
+		if cod != 0 or out == b'':
+			raise KaldiProcessError("Failed to paste feature.",err.decode())
+		else:
+			pastedName = ",".join(pastedName)
+			pastedName = f"paste({pastedName})"
+			# New index table need to be generated later.
+			return BytesFeat(out,name=pastedName,indexTable=None)
+
 def decompress_feat(feat,name="decompressedFeat"):
 	'''
 	Decompress a kaldi conpressed feature whose data-type is "CM"

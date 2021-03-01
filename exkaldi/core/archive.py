@@ -2461,17 +2461,17 @@ class BytesFeat(BytesMatrix):
 					if isinstance(ot,BytesFeat):
 						temp = fhm.create("wb+",suffix=".ark")
 						ot.sort(by="utt").save(temp)
-						otherResp.append( f"ark:{ot.name}" )
+						otherResp.append( f"ark:{temp.name}" )
 
 					elif isinstance(ot,NumpyFeat):
 						temp = fhm.create("wb+",suffix=".ark")
 						ot.sort(by="utt").to_bytes().save(temp)
-						otherResp.append( f"ark:{ot.name}" )
+						otherResp.append( f"ark:{temp.name}" )
 
 					else:
 						temp = fhm.create("w+",suffix=".scp")
 						ot.sort(by="utt").save(temp)
-						otherResp.append( f"scp:{ot.name}" )
+						otherResp.append( f"scp:{temp.name}" )
 
 					pastedName.append( ot.name )	
 			

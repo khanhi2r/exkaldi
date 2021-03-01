@@ -108,7 +108,7 @@ def run_shell_command_parallel(cmds,env=None,timeout=ExKaldiInfo.timeout):
 	runningProcess = len(processManager)
 	if runningProcess == 0:
 		raise WrongOperation("<cmds> has not any command to run.")
-	dtimeout = timeout//runningProcess
+	dtimeout = timeout #//runningProcess
 	assert dtimeout >= 1,f"<timeout> is extremely short: {timeout}."
 	for ID,p in processManager.items():
 		try:
