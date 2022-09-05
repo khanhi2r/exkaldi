@@ -18,7 +18,7 @@
 
 - install `libboost==1.65.1` with `conda`
 
-- install `tensorflow`, `python-flatbuffers`, `tensorboard` with conda (dependencies of tutorials)
+- install `tensorflow`, `python-flatbuffers`, `tensorboard` with conda (dependencies of the tutorial)
 
 - install `kenlm` with pip (`pip install https://github.com/khanhi2r/kenlm/archive/refs/tags/exkaldi.zip` or `pip install kenlm-exkaldi.zip`)
 
