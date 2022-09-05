@@ -325,7 +325,7 @@ if __name__ == "__main__":
             exkaldi.decode.graph.make_graph(lexicons, hmm_path, tree_path, tempDir=graph_dir, useLFile=L_path, useGFile=G_path)
 
     if stage <= 9: # DECODE HMM GMM
-       print("### DECODE HMM GMM ###")
+        print("### DECODE HMM GMM ###")
         lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
         lexicons = exkaldi.load_lex(lex_path)
 
@@ -353,22 +353,23 @@ if __name__ == "__main__":
 
     if stage <= 10: # SCORING
         print("### SCORING ###")
-        lat_path = os.path.join(dataDir, "exp", "train_delta", "decode_test", "test.lat")
+        lat_path = os.path.join(DATA_DIR, "exp", "train_delta", "decode_test", "test.lat")
         lat = exkaldi.decode.wfst.load_lat(lat_path)
 
-        wordsFile = os.path.join(dataDir, "exp", "words.txt")
+        words_path = os.path.join(DATA_DIR, "exp", "words.txt")
+        hmm_path = os.path.join(DATA_DIR, "exp", "train_delta", "final.mdl")
+        ref_path = os.path.join(DATA_DIR, "test", "text")
 
-        hmmFile = os.path.join(dataDir, "exp", "train_delta", "final.mdl")
-    
-        result = lat.get_1best(symbolTable=wordsFile, hmm=hmmFile, lmwt=1, acwt=0.5)
+        for penalty in [0.0, 0.5, 1.0]:
+            for lmwt in range(10, 15):
+                new_lat = lat.add_penalty(penalty)
 
-        textResult = exkaldi.hmm.transcription_from_int(result, wordsFile)
+                result = new_lat.get_1best(symbolTable=words_path, hmm=hmm_path, lmwt=1, acwt=0.5)
+                text_result = exkaldi.hmm.transcription_from_int(result, words_path)
+                score = exkaldi.decode.score.wer(ref=ref_path, hyp=text_result, mode="present")
+                print(f"penalty {penalty} lmwt {lmwt} wer {score.WER}")
 
-        lexFile = os.path.join(dataDir, "exp", "lexicons.lex")
 
-        lexicons = exkaldi.load_lex(lexFile)
-
-        
 
 
 
