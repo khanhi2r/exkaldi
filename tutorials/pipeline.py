@@ -370,7 +370,166 @@ if __name__ == "__main__":
                 print(f"penalty {penalty} lmwt {lmwt} wer {score.WER}")
 
 
+    if stage <= 11: # ACOUSTIC MODEL WITH TENSORFLOW EXAMPLE
+        print("### ACOUSTIC DNN ###")
+        import tensorflow as tf
+        from tensorflow import keras
+        import random
+        import datetime
+        import numpy as np
+        from tqdm import tqdm
 
+        seed = 1
+        random.seed(seed)
+        np.random.seed(seed)
+        tf.random.set_seed(seed)
+
+        feat_path = os.path.join(DATA_DIR, "exp", "train_mfcc_cmvn.ark")
+        feat = exkaldi.load_feat(feat_path)
+        feat = feat.add_delta(order=2)
+        feat = feat.splice(left=1,right=1)
+        feat = feat.to_numpy()
+
+        feat = feat.normalize(std=True)
+
+        ali_path = os.path.join(DATA_DIR, "exp", "train_delta", "final.ali")
+        hmm_path = os.path.join(DATA_DIR, "exp", "train_delta", "final.mdl")
+
+        ali = exkaldi.load_ali(ali_path)
+
+        ali = ali.to_numpy(aliType="pdfID", hmm=hmm_path)
+
+        feat.rename("mfcc")
+        ali.rename("pdfID")
+
+        dataset = exkaldi.tuple_dataset([feat,ali], frameLevel=True)
+        dataset_size = len(dataset)
+
+        feature_dim = feat.dim
+        pdf_classes = exkaldi.hmm.load_hmm(hmm_path,hmmType="tri").info.pdfs
+        
+        def data_generater(dataset):
+            length = len(dataset)
+            while True:
+                index = 0
+                random.shuffle(dataset)
+                while index < length:
+                    one = dataset[index]
+                    index += 1
+                    yield (one.mfcc[0], one.pdfID)
+        
+        batchSize = 64
+        tf_datasets = tf.data.Dataset.from_generator(
+            lambda : data_generater(dataset),
+            (tf.float32, tf.int32)
+        ).batch(batchSize).prefetch(3)
+
+        def make_DNN_model(inputsShape, classes):
+            inputs = keras.Input(inputsShape)
+            h1 = keras.layers.Dense(256, activation="relu", kernel_initializer="he_normal")(inputs)
+            h1_bn = keras.layers.BatchNormalization()(h1)
+            h2 = keras.layers.Dense(512, activation="relu", kernel_initializer="he_normal")(h1_bn)
+            h2_bn = keras.layers.BatchNormalization()(h2)
+            h3 = keras.layers.Dense(512, activation="relu", kernel_initializer="he_normal")(h2_bn)
+            h3_bn = keras.layers.BatchNormalization()(h3)
+            outputs = keras.layers.Dense(classes, use_bias=False)(h3_bn)
+            
+            return keras.Model(inputs, outputs)
+        
+        model = make_DNN_model((feature_dim,), pdf_classes)
+        optimizer = keras.optimizers.Adam(0.001)
+        losses = keras.metrics.Mean(name="train/loss", dtype=tf.float32)
+        accs = keras.metrics.Mean(name="train/accuracy", dtype=tf.float32)
+
+        model_dir = os.path.join(DATA_DIR, "exp", "train_dnn")
+
+        stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        log_dir = os.path.join(model_dir, "log", stamp)
+        file_writer = tf.summary.create_file_writer(log_dir)
+
+        epochs = 1
+        epoch_iterations = dataset_size//batchSize
+
+        with file_writer.as_default():
+            for epoch in range(epochs):
+                
+                for batch,i in zip(tf_datasets, tqdm(range(epoch_iterations))):
+                    data, label = batch
+                    
+                    with tf.GradientTape() as tape:
+                        logits = model(data, training=True)
+                        loss = keras.losses.sparse_categorical_crossentropy(label, logits, from_logits=True)
+                        losses(loss)
+                        gradients = tape.gradient(loss, model.trainable_variables)
+                        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+                        pred = keras.backend.argmax(logits, axis=1)
+
+                        acc = exkaldi.nn.accuracy(label.numpy(), pred.numpy())
+                        accs(acc.accuracy)
+                
+                current_loss = losses.result()
+                current_acc = accs.result()
+                tf.print( f"Epoch {epoch}", f" Loss {current_loss:.6f}", f" Acc {current_acc:.6f}")
+
+                tf.summary.scalar("train/loss", data=current_loss, step=epoch)
+                tf.summary.scalar("train/accuracy", data=current_acc, step=epoch)
+
+            tf.print( "Training Done" )
+
+        tf_model_file = os.path.join(model_dir, "dnn.h5")
+
+        model.save(tf_model_file, include_optimizer=False)
+
+        test_feat_path = os.path.join(DATA_DIR, "exp", "test_mfcc_cmvn.ark")
+        test_feat = exkaldi.load_feat(test_feat_path)
+        test_feat = test_feat.add_delta(order=2).splice(left=1,right=1)
+        test_feat = test_feat.to_numpy()
+        test_feat = test_feat.normalize(std=True)
+
+        prob = {}
+        for utt, mat in test_feat.items():
+            logits = model(mat, training=False)
+            prob[utt] = logits.numpy()
+
+        prob = exkaldi.load_prob(prob)
+
+        prob_path = os.path.join(model_dir, "amp.npy")
+
+        prob.save(prob_path)
+    
+    if stage <= 12: # DECODE AND SCORE
+        print("### DECODE AND SCORE ###")
+        prob_path = os.path.join(DATA_DIR, "exp", "train_dnn", "amp.npy")
+
+        prob = exkaldi.load_prob(prob_path)
+
+        prob = prob.map( lambda x: exkaldi.nn.log_softmax(x, axis=1))
+
+        HCLG_path = os.path.join(DATA_DIR, "exp", "train_delta", "graph", "HCLG.fst")
+
+        hmm_path = os.path.join(DATA_DIR, "exp", "train_delta", "final.mdl")
+
+        words_path = os.path.join(DATA_DIR, "exp", "words.txt")
+
+        lat = exkaldi.decode.wfst.nn_decode(prob, hmm_path, HCLG_path, symbolTable=words_path)
+
+        decode_dir = os.path.join(DATA_DIR, "exp", "train_dnn", "decode_test")
+
+        lat_path = os.path.join(decode_dir,"test.lat")
+
+        lat.save(lat_path)
+
+        ref_path = os.path.join(DATA_DIR, "test", "text")
+
+        for penalty in [0.0, 0.5, 1.0]:
+            for lmwt in range(10, 15):
+                new_lat = lat.add_penalty(penalty)
+
+                result = new_lat.get_1best(symbolTable=words_path, hmm=hmm_path, lmwt=1, acwt=0.5)
+                text_result = exkaldi.hmm.transcription_from_int(result, words_path)
+                score = exkaldi.decode.score.wer(ref=ref_path, hyp=text_result, mode="present")
+                print(f"penalty {penalty} lmwt {lmwt} wer {score.WER}")
 
 
 
