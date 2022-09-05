@@ -35,6 +35,7 @@ if __name__ == "__main__":
     exkaldi = import_exkaldi()
 
     if stage <= 2: # MFCC
+        print("### MFCC ###")
         scp_path = os.path.join(DATA_DIR, "train", "wav.scp")
         feat = exkaldi.compute_mfcc(scp_path, name="mfcc")
 
@@ -49,6 +50,7 @@ if __name__ == "__main__":
         feat_index = feat.save(feat_path, returnIndexTable=True)
     
     if stage <= 3: # LEXICON
+        print("### LEXICON ###")
         lexicon_path = os.path.join(DATA_DIR, "pronunciation.txt")
         sil_words={
             "<SIL>":"<SIL>",
@@ -83,6 +85,7 @@ if __name__ == "__main__":
         lexicons.save(lex_path)
 
     if stage <= 4: # LANGUAGE MODEL
+        print("### LANGUAGE MODEL ###")
         lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
         lexicons = exkaldi.load_lex(lex_path)
 
@@ -98,7 +101,8 @@ if __name__ == "__main__":
         G_path = os.path.join(DATA_DIR, "exp", "G.fst")
         exkaldi.decode.graph.make_G(lexicons, arpa_path, outFile=G_path, order=2)
     
-    if stage <= 5: # MONO HMM-GMM
+    if stage <= 5: # MONO HMM GMM
+        print("### MONO HMM GMM ###")
         # prepare int-id format transcription
         lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
         lexicons = exkaldi.load_lex(lex_path)
@@ -164,6 +168,7 @@ if __name__ == "__main__":
         
 
     if stage <= 6: # DECISION TREE
+        print("### DECISION TREE ###")
         lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
         lexicons = exkaldi.load_lex(lex_path)
         tree = exkaldi.hmm.DecisionTree(lexicons=lexicons, contextWidth=3, centralPosition=1)
@@ -201,8 +206,8 @@ if __name__ == "__main__":
             tree = exkaldi.hmm.DecisionTree(lexicons=lexicons,contextWidth=3,centralPosition=1)
             tree.train(feat=feat, hmm=hmm_path, ali=ali, topoFile=topo_path, numLeaves=300, tempDir=model_dir)
 
-    if stage <= 7: # TRI HMM-GMM delta
-
+    if stage <= 7: # TRI HMM GMM DELTA
+        print("### TRI HMM GMM DELTA ###")
         model = exkaldi.hmm.TriphoneHMM()
 
         tree_path = os.path.join(DATA_DIR, "exp", "train_delta", "tree")
@@ -258,7 +263,7 @@ if __name__ == "__main__":
                 model.accumulate_stats(feat=feat, ali=ali, outFile=stats_path)
 
                 print("\tupdating model...")
-                # update HMM-GMM parameters
+                # update HMM GMM parameters
                 target_gaussians = min(1500, model.info.gaussians + 8) # increase number of gaussians every pass
                 model.update(stats_path, target_gaussians)
             
