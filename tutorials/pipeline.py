@@ -8,8 +8,6 @@ KALDI_ROOT = "/home/khanh/workspace/projects/kaldi"
 
 DATA_DIR = "librispeech_dummy"
 
-LOW_LEVEL_API = True
-
 def import_exkaldi():
     import os
 
@@ -28,9 +26,12 @@ def import_exkaldi():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--stage", type=int, default=0)
+    parser.add_argument("--low-level", action='store_true', default=False)
     args = parser.parse_args()
+    print(args)
 
     stage = args.stage
+    low_level = args.low_level
 
     exkaldi = import_exkaldi()
 
@@ -124,8 +125,8 @@ if __name__ == "__main__":
         L_path = os.path.join(DATA_DIR,"exp","L.fst")
 
         
-        if LOW_LEVEL_API:
-            # LOW_LEVEL_API
+        if low_level:
+            # low_level
             trans = exkaldi.hmm.transcription_to_int(trans_path, lexicons)
 
             # compile the train graph
@@ -185,8 +186,8 @@ if __name__ == "__main__":
         model_dir = os.path.join(DATA_DIR, "exp", "train_delta")
         topo_path = os.path.join(DATA_DIR, "exp", "topo")
 
-        if LOW_LEVEL_API:
-            # LOW_LEVEL_API
+        if low_level:
+            # low_level
             # accumulate statistics data
             tree_stats_path = os.path.join(model_dir, "tree_stats.acc")
             tree.accumulate_stats(feat, hmm_path, ali, outFile=tree_stats_path)
@@ -216,8 +217,16 @@ if __name__ == "__main__":
 
         model.initialize(tree=tree_path, treeStatsFile=tree_stats_path, topoFile=topo_path)
 
-        if LOW_LEVEL_API:
-            # LOW_LEVEL_API
+        feat_path = os.path.join(DATA_DIR, "exp", "train_mfcc_cmvn.ark")
+        feat = exkaldi.load_feat(feat_path)
+        feat = feat.add_delta(order=2)
+
+        L_path = os.path.join(DATA_DIR, "exp", "L.fst")
+        model_dir = os.path.join(DATA_DIR, "exp", "train_delta")
+        trans_path = os.path.join(DATA_DIR, "train", "text")
+
+        if low_level:
+            # low_level
             ali_path = os.path.join(DATA_DIR, "exp", "train_mono", "final.ali")
             mono_path= os.path.join(DATA_DIR, "exp", "train_mono", "final.mdl")
             ali = exkaldi.load_ali(ali_path)
@@ -232,22 +241,14 @@ if __name__ == "__main__":
             lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
             lexicons = exkaldi.load_lex(lex_path)
             
-            trans_path = os.path.join(DATA_DIR, "train", "text")
             trans = exkaldi.hmm.transcription_to_int(trans_path, lexicons)
             
             #int_trans_path = os.path.join(DATA_DIR, "exp", "text.int")
             #trans.save(int_trans_path)
 
-            L_path = os.path.join(DATA_DIR, "exp", "L.fst")
-
-            feat_path = os.path.join(DATA_DIR, "exp", "train_mfcc_cmvn.ark")
-            feat = exkaldi.load_feat(feat_path)
-            feat = feat.add_delta(order=2)
-
             # compile new train graph
-            model_dir = os.path.join(DATA_DIR, "exp", "train_delta")
             graph_path = os.path.join(model_dir, "train_graph")
-            model.compile_train_graph(tree=model.tree, transcription=trans, LFile=L_path, outFile=graph_path) # try to replace tree_path by model.tree
+            model.compile_train_graph(tree=model.tree, transcription=trans, LFile=L_path, outFile=graph_path, lexicons=lexicons) # try to replace tree_path by model.tree
 
 
             num_iterations = 10
@@ -277,7 +278,16 @@ if __name__ == "__main__":
 
         else:
             # HIGH_LEVEL_API
-            pass
+            ali_index = model.train(
+                feat=feat,
+                transcription=trans_path,
+                LFile=L_path,
+                tree=tree_path,
+                tempDir=model_dir, 
+                numIters=10,
+                maxIterInc=8,
+                totgauss=1500,
+            )
 
 
 
