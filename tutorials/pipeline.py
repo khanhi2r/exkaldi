@@ -324,8 +324,8 @@ if __name__ == "__main__":
             # HIGH_LEVEL_API
             exkaldi.decode.graph.make_graph(lexicons, hmm_path, tree_path, tempDir=graph_dir, useLFile=L_path, useGFile=G_path)
 
-    if stage <= 9: # DECODE HMM GMM
-        print("### DECODE HMM GMM ###")
+    if stage <= 9: # DECODE AND SCORE
+        print("### DECODE AND SCORE ###")
         lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
         lexicons = exkaldi.load_lex(lex_path)
 
@@ -351,13 +351,7 @@ if __name__ == "__main__":
         lat_path = os.path.join(decode_dir, "test.lat")
         lat.save(lat_path)
 
-    if stage <= 10: # SCORING
-        print("### SCORING ###")
-        lat_path = os.path.join(DATA_DIR, "exp", "train_delta", "decode_test", "test.lat")
-        lat = exkaldi.decode.wfst.load_lat(lat_path)
-
         words_path = os.path.join(DATA_DIR, "exp", "words.txt")
-        hmm_path = os.path.join(DATA_DIR, "exp", "train_delta", "final.mdl")
         ref_path = os.path.join(DATA_DIR, "test", "text")
 
         for penalty in [0.0, 0.5, 1.0]:
