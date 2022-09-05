@@ -24,3 +24,4 @@
 
 - install `exkaldi` with pip (`pip install https://github.com/khanhi2r/exkaldi/archive/refs/tags/v1.3.6.zip` or `pip install exkaldi-1.3.6.zip`)
 
+- `chmod +x /home/khanh/workspace/miniconda3/envs/exkaldi/exkaldisrc/tools/lmplz`
