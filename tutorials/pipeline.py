@@ -206,16 +206,17 @@ if __name__ == "__main__":
             # HIGH_LEVEL_API
             tree = exkaldi.hmm.DecisionTree(lexicons=lexicons,contextWidth=3,centralPosition=1)
             tree.train(feat=feat, hmm=hmm_path, ali=ali, topoFile=topo_path, numLeaves=300, tempDir=model_dir)
+            os.rename(os.path.join(model_dir, "treeStats.acc"), os.path.join(model_dir, "tree_stats.acc"))
 
     if stage <= 7: # TRI HMM GMM DELTA
         print("### TRI HMM GMM DELTA ###")
-        model = exkaldi.hmm.TriphoneHMM()
 
         tree_path = os.path.join(DATA_DIR, "exp", "train_delta", "tree")
         tree_stats_path = os.path.join(DATA_DIR, "exp", "train_delta", "tree_stats.acc")
         topo_path = os.path.join(DATA_DIR, "exp", "topo")
 
-        model.initialize(tree=tree_path, treeStatsFile=tree_stats_path, topoFile=topo_path)
+        lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
+        lexicons = exkaldi.load_lex(lex_path)
 
         feat_path = os.path.join(DATA_DIR, "exp", "train_mfcc_cmvn.ark")
         feat = exkaldi.load_feat(feat_path)
@@ -225,11 +226,15 @@ if __name__ == "__main__":
         model_dir = os.path.join(DATA_DIR, "exp", "train_delta")
         trans_path = os.path.join(DATA_DIR, "train", "text")
 
+        
         if low_level:
             # low_level
             ali_path = os.path.join(DATA_DIR, "exp", "train_mono", "final.ali")
             mono_path= os.path.join(DATA_DIR, "exp", "train_mono", "final.mdl")
             ali = exkaldi.load_ali(ali_path)
+
+            model = exkaldi.hmm.TriphoneHMM()
+            model.initialize(tree=tree_path, treeStatsFile=tree_stats_path, topoFile=topo_path)
 
             new_ali = exkaldi.hmm.convert_alignment(
                 ali=ali, 
@@ -238,8 +243,7 @@ if __name__ == "__main__":
                 tree=tree_path
             )
 
-            lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
-            lexicons = exkaldi.load_lex(lex_path)
+            
             
             trans = exkaldi.hmm.transcription_to_int(trans_path, lexicons)
             
@@ -278,6 +282,9 @@ if __name__ == "__main__":
 
         else:
             # HIGH_LEVEL_API
+            model = exkaldi.hmm.TriphoneHMM(lexicons=lexicons)
+            model.initialize(tree=tree_path, treeStatsFile=tree_stats_path, topoFile=topo_path)
+
             ali_index = model.train(
                 feat=feat,
                 transcription=trans_path,
@@ -289,7 +296,67 @@ if __name__ == "__main__":
                 totgauss=1500,
             )
 
+    if stage <= 8: # MAKE HCLG
+        lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
+        lexicons = exkaldi.load_lex(lex_path)
 
+        graph_dir = os.path.join(DATA_DIR, "exp", "train_delta", "graph")
+        hmm_path = os.path.join(DATA_DIR, "exp", "train_delta", "final.mdl")
+        tree_path = os.path.join(DATA_DIR, "exp", "train_delta", "tree")
+        L_path = os.path.join(DATA_DIR, "exp", "L_disambig.fst")
+        G_path = os.path.join(DATA_DIR, "exp", "G.fst")
+
+        if low_level:
+            # LOW_LEVEL_API
+            
+            LG_path = os.path.join(graph_dir, "LG.fst")
+            exkaldi.decode.graph.compose_LG(L_path, G_path, outFile=LG_path)
+
+            
+            CLG_path = os.path.join(graph_dir, "CLG.fst")
+            _, i_label_path = exkaldi.decode.graph.compose_CLG(lexicons, tree_path, LG_path, outFile=CLG_path)
+
+            
+            HCLG_path = os.path.join(graph_dir, "HCLG.fst")
+            exkaldi.decode.graph.compose_HCLG(hmm_path, tree_path, CLG_path, i_label_path, outFile=HCLG_path)
+        else:
+            # HIGH_LEVEL_API
+            exkaldi.decode.graph.make_graph(lexicons, hmm_path, tree_path, tempDir=graph_dir, useLFile=L_path, useGFile=G_path)
+
+    if stage <= 9: # DECODE HMM HMM
+        lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
+        lexicons = exkaldi.load_lex(lex_path)
+
+        scp_path = os.path.join(DATA_DIR, "test", "wav.scp")
+        utt2spk_path = os.path.join(DATA_DIR, "test", "utt2spk")
+        spk2utt_path = os.path.join(DATA_DIR, "test", "spk2utt")
+
+        feat = exkaldi.compute_mfcc(scp_path, name="mfcc")
+        cmvn = exkaldi.compute_cmvn_stats(feat, spk2utt=spk2utt_path, name="cmvn")
+        feat = exkaldi.use_cmvn(feat, cmvn, utt2spk=utt2spk_path)
+
+        feat_path = os.path.join(DATA_DIR, "exp", "test_mfcc_cmvn.ark")
+        feat.save(feat_path)
+        feat = feat.add_delta(order=2)
+
+        HCLG_path = os.path.join(DATA_DIR, "exp", "train_delta", "graph", "HCLG.fst")
+
+        hmm_path = os.path.join(DATA_DIR, "exp", "train_delta", "final.mdl")
+
+        lat = exkaldi.decode.wfst.gmm_decode(feat, hmm_path, HCLG_path, symbolTable=lexicons("words"))
+
+        decode_dir = os.path.join(DATA_DIR, "exp", "train_delta", "decode_test")
+
+        lat_path = os.path.join(decode_dir,"test.lat")
+
+        ref_int_path = os.path.join(DATA_DIR, "exp", "train_delta", "decode_test", "text.int")
+
+        for penalty in [0., 0.5, 1.0]:
+            for LMWT in range(10, 15):
+                new_lat = lat.add_penalty(penalty)
+                result = new_lat.get_1best(lexicons("words"), hmm_path, lmwt=LMWT, acwt=0.5)
+                score = exkaldi.decode.score.wer(ref=ref_int_path, hyp=result, mode="present")
+                print(f"Penalty {penalty}, LMWT {LMWT}: WER {score.WER}")
 
 
 
