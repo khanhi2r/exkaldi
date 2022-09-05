@@ -360,6 +360,15 @@ if __name__ == "__main__":
 
         hmmFile = os.path.join(dataDir, "exp", "train_delta", "final.mdl")
     
+        result = lat.get_1best(symbolTable=wordsFile, hmm=hmmFile, lmwt=1, acwt=0.5)
+
+        textResult = exkaldi.hmm.transcription_from_int(result, wordsFile)
+
+        lexFile = os.path.join(dataDir, "exp", "lexicons.lex")
+
+        lexicons = exkaldi.load_lex(lexFile)
+
+        
 
 
 
