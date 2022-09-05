@@ -297,6 +297,7 @@ if __name__ == "__main__":
             )
 
     if stage <= 8: # MAKE HCLG
+        print("### MAKE HCLG ###")
         lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
         lexicons = exkaldi.load_lex(lex_path)
 
@@ -323,7 +324,8 @@ if __name__ == "__main__":
             # HIGH_LEVEL_API
             exkaldi.decode.graph.make_graph(lexicons, hmm_path, tree_path, tempDir=graph_dir, useLFile=L_path, useGFile=G_path)
 
-    if stage <= 9: # DECODE HMM HMM
+    if stage <= 9: # DECODE HMM GMM
+       print("### DECODE HMM GMM ###")
         lex_path = os.path.join(DATA_DIR, "exp", "lexicons.lex")
         lexicons = exkaldi.load_lex(lex_path)
 
@@ -346,21 +348,18 @@ if __name__ == "__main__":
         lat = exkaldi.decode.wfst.gmm_decode(feat, hmm_path, HCLG_path, symbolTable=lexicons("words"))
 
         decode_dir = os.path.join(DATA_DIR, "exp", "train_delta", "decode_test")
+        lat_path = os.path.join(decode_dir, "test.lat")
+        lat.save(lat_path)
 
-        lat_path = os.path.join(decode_dir,"test.lat")
+    if stage <= 10: # SCORING
+        print("### SCORING ###")
+        lat_path = os.path.join(dataDir, "exp", "train_delta", "decode_test", "test.lat")
+        lat = exkaldi.decode.wfst.load_lat(lat_path)
 
-        ref_int_path = os.path.join(DATA_DIR, "exp", "train_delta", "decode_test", "text.int")
+        wordsFile = os.path.join(dataDir, "exp", "words.txt")
 
-        for penalty in [0., 0.5, 1.0]:
-            for LMWT in range(10, 15):
-                new_lat = lat.add_penalty(penalty)
-                result = new_lat.get_1best(lexicons("words"), hmm_path, lmwt=LMWT, acwt=0.5)
-                score = exkaldi.decode.score.wer(ref=ref_int_path, hyp=result, mode="present")
-                print(f"Penalty {penalty}, LMWT {LMWT}: WER {score.WER}")
-
-
-
-
+        hmmFile = os.path.join(dataDir, "exp", "train_delta", "final.mdl")
+    
 
 
 
